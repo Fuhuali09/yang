@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>英雄联盟 - 英雄详情</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f2f2f7;
+      color: #1c1c1e;
+    }
+    .status-bar {
+      height: 44px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background-color: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .nav-bar {
+      position: fixed;
+      top: 44px;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      background-color: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .home-indicator {
+      height: 5px;
+      width: 36%;
+      background-color: #000;
+      border-radius: 3px;
+      opacity: 0.2;
+    }
+    .content-area {
+      margin-top: 100px;
+      padding-bottom: 30px;
+    }
+    .hero-header {
+      position: relative;
+      height: 240px;
+      overflow: hidden;
+    }
+    .hero-header-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .hero-header-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      padding: 20px 16px;
+    }
+    .champion-tag {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background-color: rgba(0, 122, 255, 0.1);
+      color: #007AFF;
+    }
+    .champion-tag.fighter {
+      background-color: rgba(255, 69, 58, 0.1);
+      color: #FF453A;
+    }
+    .champion-tag.tank {
+      background-color: rgba(88, 86, 214, 0.1);
+      color: #5856D6;
+    }
+    .champion-tag.mage {
+      background-color: rgba(52, 199, 89, 0.1);
+      color: #34C759;
+    }
+    .champion-tag.assassin {
+      background-color: rgba(255, 149, 0, 0.1);
+      color: #FF9500;
+    }
+    .champion-tag.support {
+      background-color: rgba(175, 82, 222, 0.1);
+      color: #AF52DE;
+    }
+    .champion-tag.marksman {
+      background-color: rgba(90, 200, 250, 0.1);
+      color: #5AC8FA;
+    }
+    .stat-bar {
+      height: 6px;
+      background-color: rgba(142, 142, 147, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .stat-bar-fill {
+      height: 100%;
+      background-color: #007AFF;
+      border-radius: 3px;
+    }
+    .stat-bar-fill.attack {
+      background-color: #FF453A;
+    }
+    .stat-bar-fill.defense {
+      background-color: #5856D6;
+    }
+    .stat-bar-fill.magic {
+      background-color: #34C759;
+    }
+    .stat-bar-fill.difficulty {
+      background-color: #FF9500;
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .ios-card {
+      background-color: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 16px;
+    }
+    .tab-bar {
+      display: flex;
+      background-color: white;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tab-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .tab-item {
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #8E8E93;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+    }
+    .tab-item.active {
+      color: #007AFF;
+      border-bottom-color: #007AFF;
+    }
+    .skill-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    .skin-card {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .skin-image {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+    }
+    .skin-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      color: white;
+    }
+    .loading {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top-color: #007AFF;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .slide-in {
+      animation: slideIn 0.3s ease-in-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(30px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .tab-content {
+      padding: 16px;
+    }
+    .tip-card {
+      background-color: rgba(0, 122, 255, 0.05);
+      border-left: 3px solid #007AFF;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .tip-card.enemy {
+      background-color: rgba(255, 69, 58, 0.05);
+      border-left-color: #FF453A;
+    }
+  </style>
+</head>
+<body>
+  <!-- iOS 状态栏 - 固定在顶部 -->
+  <div class="status-bar flex items-center justify-between px-5 pt-2">
+    <div class="text-sm font-semibold">9:41</div>
+    <div class="flex space-x-1">
+      <i class="fas fa-signal"></i>
+      <i class="fas fa-wifi"></i>
+      <i class="fas fa-battery-full"></i>
+    </div>
+  </div>
+
+  <!-- 导航栏 -->
+  <div class="nav-bar flex items-center">
+    <button id="backButton" class="text-blue-500 flex items-center">
+      <i class="fas fa-chevron-left mr-1"></i>
+      <span>返回</span>
+    </button>
+    <h1 class="text-lg font-semibold mx-auto" id="navTitle">英雄详情</h1>
+    <button class="text-blue-500">
+      <i class="fas fa-share-alt"></i>
+    </button>
+  </div>
+
+  <!-- 主内容区 -->
+  <div class="content-area" id="contentArea">
+    <div class="flex justify-center items-center py-20">
+      <div class="loading mr-2"></div>
+      <span class="text-gray-500">加载中...</span>
+    </div>
+  </div>
+
+  <!-- iOS Home Indicator -->
+  <div class="fixed bottom-0 left-0 right-0 flex justify-center py-2">
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- 音频元素 -->
+  <audio id="heroAudio" preload="none"></audio>
+
+  <script>
+    // 获取DOM元素
+    const backButton = document.getElementById('backButton');
+    const navTitle = document.getElementById('navTitle');
+    const contentArea = document.getElementById('contentArea');
+    const heroAudio = document.getElementById('heroAudio');
+
+    // API地址
+    const apiUrl = 'https://api-vue-base.itheima.net/api/lol/info';
+
+    // 角色类型映射
+    const roleMap = {
+      fighter: '战士',
+      assassin: '刺客',
+      mage: '法师',
+      tank: '坦克',
+      support: '辅助',
+      marksman: '射手'
+    };
+
+    // 技能键位映射
+    const spellKeyMap = {
+      passive: '被动',
+      q: 'Q',
+      w: 'W',
+      e: 'E',
+      r: 'R'
+    };
+
+    // 获取URL参数
+    function getUrlParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // 获取英雄ID
+    const heroId = getUrlParam('id');
+
+    // 返回按钮点击事件
+    backButton.addEventListener('click', () => {
+      window.location.href = 'champion.html';
+    });
+
+    // 获取英雄详情
+    async function fetchHeroDetail(id) {
+      if (!id) {
+        contentArea.innerHTML = `
+          <div class="p-4 text-center text-red-500">
+            未指定英雄ID，无法获取详情
+          </div>
+        `;
+        return;
+      }
+
+      try {
+        // 显示加载中
+        contentArea.innerHTML = `
+          <div class="flex justify-center items-center py-20">
+            <div class="loading mr-2"></div>
+            <span class="text-gray-500">加载中...</span>
+          </div>
+        `;
+
+        // 发送请求
+        const response = await fetch(`${apiUrl}?id=${id}`);
+        if (!response.ok) {
+          throw new Error('网络请求失败');
+        }
+
+        const result = await response.json();
+
+        if (result.code !== 200) {
+          throw new Error(result.msg || '获取英雄详情失败');
+        }
+
+        // 渲染英雄详情
+        renderHeroDetail(result.data);
+
+      } catch (error) {
+        console.error('获取英雄详情出错:', error);
+        contentArea.innerHTML = `
+          <div class="p-4 text-center text-red-500">
+            ${error.message || '加载失败，请稍后再试'}
+          </div>
+        `;
+      }
+    }
+
+    // 渲染英雄详情
+    function renderHeroDetail(data) {
+      const { hero, spells, skins } = data;
+
+      navTitle.textContent = hero.title;
+
+      // 判断是否有皮肤数据
+      const hasSkins = Array.isArray(skins) && skins.length > 0;
+
+      // 构建标签栏（无对战技巧tab）
+      let tabBarHtml = `
+        <div class="tab-bar">
+          <div class="tab-item active" data-tab="info">基本信息</div>
+          <div class="tab-item" data-tab="skills">技能介绍</div>
+          ${hasSkins ? `<div class="tab-item" data-tab="skins">皮肤展示</div>` : ''}
+        </div>
+      `;
+
+      // 构建皮肤内容（无皮肤时不渲染）
+      let skinsHtml = hasSkins ? `
+        <div class="tab-content hidden" id="skins-content">
+          <div class="grid grid-cols-1 gap-4">
+            ${skins.map(skin => `
+              <div class="skin-card">
+                <img src="${skin.mainImg}" alt="${skin.name}" class="skin-image" />
+                <div class="skin-info">
+                  <h3 class="font-medium">${skin.name}</h3>
+                  ${skin.description ? `<p class="text-xs text-white/80 mt-1">${skin.description}</p>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '';
+
+      const content = `
+        <!-- 英雄头部信息 -->
+        <div class="hero-header">
+          <img src="${hero.icon}" alt="${hero.name}" class="hero-header-image" />
+          <div class="hero-header-overlay">
+            <h1 class="text-white text-2xl font-bold">${hero.title}</h1>
+            <p class="text-white opacity-80 text-sm mb-2">${hero.name}</p>
+            <div class="flex flex-wrap gap-2 mb-3">
+              ${hero.roles.map(role => `
+                <span class="champion-tag ${role.toLowerCase()}">${roleMap[role.toLowerCase()] || role}</span>
+              `).join('')}
+            </div>
+            <button id="playAudioBtn" class="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs flex items-center">
+              <i class="fas fa-volume-up mr-1"></i>
+              播放语音
+            </button>
+          </div>
+        </div>
+        ${tabBarHtml}
+        <div class="tab-content-container">
+          <!-- 基本信息 -->
+          <div class="tab-content fade-in" id="info-content">
+            <div class="ios-card p-4">
+              <h3 class="section-title">英雄介绍</h3>
+              <p class="text-gray-700 leading-relaxed mb-4">${hero.shortBio || '暂无介绍'}</p>
+              <h3 class="section-title mt-6">属性数据</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-medium">攻击</span>
+                    <span class="text-xs text-gray-500">${hero.attack}/10</span>
+                  </div>
+                  <div class="stat-bar">
+                    <div class="stat-bar-fill attack" style="width: ${hero.attack * 10}%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-medium">防御</span>
+                    <span class="text-xs text-gray-500">${hero.defense}/10</span>
+                  </div>
+                  <div class="stat-bar">
+                    <div class="stat-bar-fill defense" style="width: ${hero.defense * 10}%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-medium">魔法</span>
+                    <span class="text-xs text-gray-500">${hero.magic}/10</span>
+                  </div>
+                  <div class="stat-bar">
+                    <div class="stat-bar-fill magic" style="width: ${hero.magic * 10}%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-medium">难度</span>
+                    <span class="text-xs text-gray-500">${hero.difficulty}/10</span>
+                  </div>
+                  <div class="stat-bar">
+                    <div class="stat-bar-fill difficulty" style="width: ${hero.difficulty * 10}%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="ios-card p-4 mt-4">
+              <h3 class="section-title">详细属性</h3>
+              <div class="grid grid-cols-2 gap-y-3 gap-x-6">
+                <div>
+                  <div class="text-xs text-gray-500">生命值</div>
+                  <div class="font-medium">${hero.hp}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">生命回复</div>
+                  <div class="font-medium">${hero.hpregen}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">魔法值</div>
+                  <div class="font-medium">${hero.mp}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">魔法回复</div>
+                  <div class="font-medium">${hero.mpregen}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">攻击力</div>
+                  <div class="font-medium">${hero.attackdamage}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">攻击速度</div>
+                  <div class="font-medium">${hero.attackspeed}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">护甲</div>
+                  <div class="font-medium">${hero.armor}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">魔抗</div>
+                  <div class="font-medium">${hero.spellblock}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">移动速度</div>
+                  <div class="font-medium">${hero.movespeed}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">攻击范围</div>
+                  <div class="font-medium">${hero.attackrange}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 技能介绍 -->
+          <div class="tab-content hidden" id="skills-content">
+            <div class="ios-card">
+              ${spells.map((spell, index) => `
+                <div class="p-4 ${index > 0 ? 'border-t border-gray-100' : ''}">
+                  <div class="flex">
+                    <div class="skill-icon mr-3">
+                      <img src="${spell.abilityIconPath}" alt="${spell.name}" class="w-full h-full object-cover" />
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex justify-between items-center mb-1">
+                        <h3 class="font-semibold">${spell.name}</h3>
+                        <span class="text-xs px-2 py-1 bg-gray-100 rounded-full">${spellKeyMap[spell.spellKey] || spell.spellKey}</span>
+                      </div>
+                      <p class="text-sm text-gray-700 leading-relaxed">${spell.description}</p>
+                      ${spell.cooldownburn ? `
+                        <div class="mt-2 text-xs text-gray-500">
+                          <span class="mr-3">冷却时间: ${spell.cooldownburn}秒</span>
+                          ${spell.costburn ? `<span>消耗: ${spell.costburn}</span>` : ''}
+                        </div>
+                      ` : ''}
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          ${skinsHtml}
+        </div>
+      `;
+
+      contentArea.innerHTML = content;
+
+      document.querySelectorAll('.tab-item').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const tabId = tab.getAttribute('data-tab');
+          document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+          });
+          const activeContent = document.getElementById(`${tabId}-content`);
+          if (activeContent) {
+            activeContent.classList.remove('hidden');
+            activeContent.classList.add('fade-in');
+          }
+        });
+      });
+
+      const playAudioBtn = document.getElementById('playAudioBtn');
+      if (playAudioBtn) {
+        playAudioBtn.addEventListener('click', () => {
+          if (hero.selectAudio) {
+            const audioUrl = hero.selectAudio.trim().replace(/['"]/g, '');
+            heroAudio.src = audioUrl;
+            heroAudio.play().catch(error => {
+              console.error('播放音频失败:', error);
+            });
+          }
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchHeroDetail(heroId);
+    });
+  </script>
+</body>
+</html>
